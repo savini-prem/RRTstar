@@ -3,6 +3,7 @@
 #include <math.h>
 #include "rrtstar.h"
 
+#define NUM_ROBOTS 1
 #define NUM_RUNS 100
 #define NUM_OBSTACLES 2
 #define OBSTACLE_SIZE 4
@@ -12,12 +13,10 @@
 /* LIST OF FLAWS : ) 
       1. collisionFree means something diff?
       2. obstacles hard coded (ADD INPUT FILES WITH OBSTACLES AND GOAL REGIONS)
-      3. steer doesnt actually minimize, just checks
-      4. radius calculation may be slightly wrong
-      5. near algorithm is slightly altered 
-      6. abbreviated cost function is just distance function (i.e. c=1)
-      7. when sampling random point, can it be contained within any of the target regions? 
-      8. rewire??? 
+      3. steer doesnt actually minimize, just checks LMAO FIX THIS TO WHAT XUSHENG SAID 
+      4. near algorithm is slightly altered 
+      5. rewire??? 
+      6. is all i have to do add a state member to the vertex struct? (yes) 
 */
 
 int main(int argc, char ** argv){
@@ -80,9 +79,10 @@ int main(int argc, char ** argv){
       //printf("cost of nearest is %f\n",nearest->cost);
 
       // find vertices in tree closest to new_steer within a ball of radius r 
+      // (future: include while loop in function??)
       vertex_t* ptr = current;
       while(ptr->parent!=NULL){
-        if(findNear(ptr,new_steer,count)){
+        if(findNear(ptr,new_steer,count,NUM_ROBOTS)){
           // for each vertex in near check if the cost is less than cmin, 
           // if so this vertex becomes xmin
           if(ptr->cost < min->cost) min=ptr;
@@ -96,7 +96,17 @@ int main(int argc, char ** argv){
       new_steer->parent = min;
       current = new_steer;
 
-      // rewire
+      // rewire (future: include while loop in function??)
+      // ASK XUSHENG BOUT BRANCHING THEN ADD THIS???
+      /*vertex_t* ptr = current;
+      while(ptr->parent!=NULL){
+        if(findNear(ptr,new_steer,count,NUM_ROBOTS)){
+          // if theoretical cost of near if parent is new_steer < actual cost of new_steer
+          // then near->parent = new_steer
+          if(ptr->cost+calcDistance() < ) min=ptr;
+        }
+        ptr = ptr->parent;
+      }*/
 
       // break if vertex in goal region
       if(!collisionFreeMult(current,goal,NUM_GOALS,GOAL_SIZE)) break;

@@ -86,10 +86,25 @@ float calcDistance(float a[], float b[]){
 // changes location of rand vertex 
 // new location ensures distance between nearest and new rand < nu
 // new location ensures distance between old rand and new rand < old rand and nearest
+// i.e that new rand lies on the line between old rand and nearest, a distance of nu away from nearest
 vertex_t* steer(vertex_t* rand, vertex_t* nearest){ 
-	float old_rand[] = {rand->loc[0],rand->loc[1]};
-
+	// calculate nu
 	float nu = 0.25*NUM_ROBOTS; //because environment is 1x1
+
+	// calculate direction vector 
+	float dv[] = {rand->loc[0]-nearest->loc[0],rand->loc[1]-nearest->loc[1]};
+	
+	// calculate distance between neareast & rand
+	float a = calcDistance(nearest->loc,rand->loc);
+
+	// scale direction vector by nu
+	float w[] = {(nu/a)*dv[0],(nu/a)*dv[1]};
+
+	// find new rand 
+	rand->loc[0] = nearest->loc[0]+w[0];
+	rand->loc[1] = nearest->loc[1]+w[1];
+
+	/*float old_rand[] = {rand->loc[0],rand->loc[1]};
 	float dist = calcDistance(nearest->loc,rand->loc);
 	
 	while(1){
@@ -97,17 +112,17 @@ vertex_t* steer(vertex_t* rand, vertex_t* nearest){
 		if( calcDistance(nearest->loc,rand->loc)< nu && calcDistance(old_rand,rand->loc)<dist){
 			break;
 		}
-	}
+	}*/
 
 	return rand;
 }
 
 // calculates radius used by near 
 // CONFIRM WITH XUSHENG THAT dim = 2*NUM_ROBOTS AND THAT mu = 1
-float calcRadius(int count){ 
-	float nu = 0.25*NUM_ROBOTS; //because environment is 1x1
-	float gamma = ceil(4*pow((1/M_PI),2*NUM_ROBOTS));
-	float radius = fmin((gamma*pow(log(count)/count,2*NUM_ROBOTS)), nu);
+float calcRadius(int count, int num_robots){ 
+	float nu = 0.25*num_robots; //because environment is 1x1
+	float gamma = ceil(4*pow((1/M_PI),1/(2*num_robots)));
+	float radius = fmin( ( gamma*pow( log(count)/count , 1/(2*num_robots) ) ), nu );
 	return radius;
 }
 
@@ -130,9 +145,9 @@ vertex_t* findNearest(vertex_t* current, vertex_t* rand){
 
 // should: find ALL vertices in tree that are a max radial distance from new_steer 
 // this version: returns TRUE if within max radial distance from new_steer
-int findNear(vertex_t* current, vertex_t* new_steer, int count){
+int findNear(vertex_t* current, vertex_t* new_steer, int count, int num_robots){
 	float dist = calcDistance(current->loc,new_steer->loc);
-	float radius = calcRadius(count);
+	float radius = calcRadius(count, num_robots);
 	//printf("radius: %f\n",radius);
 
 	if(dist<radius) return TRUE;
@@ -199,7 +214,7 @@ int obstacleFreeMult(vertex_t* nearest, vertex_t* new_steer, float obst[][5][2],
 	return result;
 }
 
-// calculates cost of adding vertex
+// calculates cost of adding vertex (note that C=1)
 float calcCost(vertex_t* nearest, vertex_t* new_steer){
 	return calcDistance(nearest->loc,new_steer->loc) + nearest->cost;
 }
