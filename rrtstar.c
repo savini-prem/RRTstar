@@ -21,6 +21,14 @@ void printVertex(vertex_t* current){
 	printf("[%f,%f]\n",current->loc[0],current->loc[1]);
 }
 
+// for debugging
+void printArray(array_t* current){
+	for(int i=0; i<current->len; i++){
+		printf("[%f,%f] ",current->arr[i]->loc[0],current->arr[i]->loc[1]);
+	}
+    printf("\n");
+}
+
 // create new vertex and initialize 
 vertex_t* newVertex(void){
 	vertex_t* result = (vertex_t*)malloc(sizeof(vertex_t));
@@ -29,6 +37,21 @@ vertex_t* newVertex(void){
 	result->parent=NULL;
 	result->cost=0.0;
 	return result;
+}
+
+// create new vertex array and initialize
+array_t* newArray(void){
+	array_t* result = (array_t*)malloc(sizeof(array_t));
+  	result->arr = NULL;
+  	result->len = 0; 
+  	return result;
+}
+
+// add new vertex element to end of array 
+void addToArray(array_t* result, vertex_t* element){
+	result->arr = (vertex_t**)realloc(result->arr,(result->len+1)*sizeof(vertex_t*));
+    result->arr[result->len] = element;
+    result->len++;
 }
 
 // choose random location and assign to vertex
@@ -127,30 +150,62 @@ float calcRadius(int count, int num_robots){
 }
 
 // finds vertex in tree that is closest to the random vertex
-vertex_t* findNearest(vertex_t* current, vertex_t* rand){
-	int dist = calcDistance(current->loc,rand->loc);
-	vertex_t* result = current;
+vertex_t* findNearest(array_t* endpts, vertex_t* rand){ // not efficient implementation because repeat nodes
+	vertex_t* result=endpts->arr[0];
+	int dist = calcDistance(endpts->arr[0]->loc,rand->loc);
+									
+	for(int i=0; i<endpts->len; i++){
+		vertex_t* current = endpts->arr[i];
 
-	while(current->parent!=NULL){
-		current = current->parent;
 		int dist1 = calcDistance(current->loc,rand->loc);
-
-		if(dist1<dist){
-			dist = dist1;
-			vertex_t* result = current;
+		if(dist1<dist) result = current;
+		
+		while(current->parent!=NULL){
+			current = current->parent;
+			int dist1 = calcDistance(current->loc,rand->loc);
+			if(dist1<dist){
+				dist = dist1;
+				result = current;
+			}
 		}
 	}
 	return result;
 }
 
-// should: find ALL vertices in tree that are a max radial distance from new_steer 
-// this version: returns TRUE if within max radial distance from new_steer
-int findNear(vertex_t* current, vertex_t* new_steer, int count, int num_robots){
-	float dist = calcDistance(current->loc,new_steer->loc);
-	float radius = calcRadius(count, num_robots);
-	//printf("radius: %f\n",radius);
+// returns ALL vertices in tree that are within a max radial distance from new_steer 
+array_t* findNear(array_t* endpts, vertex_t* new_steer, int count, int num_robots){
+	array_t* result = newArray();
 
-	if(dist<radius) return TRUE;
+	for(int i=0; i<endpts->len; i++){
+		vertex_t* current = endpts->arr[i]; 
+ 
+		float dist = calcDistance(current->loc,new_steer->loc);
+		float radius = calcRadius(count, num_robots);
+		//printf("radius: %f\n",radius);
+
+		if(dist<radius && !contains(result,current)){
+			addToArray(result,current);
+		}
+
+		while(current->parent!=NULL){
+			current = current->parent;
+			dist = calcDistance(current->loc,new_steer->loc);
+			if(dist<radius && !contains(result,current)){
+				addToArray(result,current);
+			}
+		}
+	}
+	if(result->arr == NULL){
+		addToArray(result,endpts->arr[0]);
+	}
+	return result;
+}
+
+// returns true if vertex array contains current
+int contains(array_t* result, vertex_t* current){
+	for(int i=0; i<result->len; i++){
+		if(result->arr[i]==current) return TRUE;
+	}
 	return FALSE;
 }
 
@@ -219,6 +274,38 @@ float calcCost(vertex_t* nearest, vertex_t* new_steer){
 	return calcDistance(nearest->loc,new_steer->loc) + nearest->cost;
 }
 
+vertex_t* findMinCost(array_t* near){
+	//printf("seg here 1");
+	vertex_t* min = near->arr[0];
+	for(int i=0; i<near->len; i++){
+		//printf("seg here 2");
+		if(near->arr[i]->cost<min->cost) min = near->arr[i];
+	}
+	return min;
+}
+
+void extend(array_t* endpts, vertex_t* new_steer){
+	int flag = 0; 
+    for(int i=0; i<endpts->len; i++){ // doesnt branch, so replace endpts element
+       	if(endpts->arr[i]==new_steer->parent){
+          	endpts->arr[i] = new_steer;
+          	flag++;
+        }
+    }
+    if(flag==0){ // does branch, so add new endpoint element
+        addToArray(endpts,new_steer);
+    }
+}
+
+void rewire(array_t* near, vertex_t* new_steer){
+	for(int i=0; i<near->len; i++){ 
+        if(calcCost(near->arr[i],new_steer) < near->arr[i]->cost){
+          	near->arr[i]->parent = new_steer;
+          	near->arr[i]->cost = calcCost(near->arr[i],new_steer);
+        }
+     }
+}
+
 // free heap memory
 void freeVertices(vertex_t* current){
 	vertex_t* parentVertex = current->parent;
@@ -228,4 +315,12 @@ void freeVertices(vertex_t* current){
 		parentVertex = parentVertex->parent;
 		free(current);
 	}
+}
+
+// free heap memory
+void freeArray(array_t* current){
+	for(int i=0; i<current->len; i++){
+		free(current->arr[i]);
+	}
+	free(current);
 }
