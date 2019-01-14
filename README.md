@@ -1,6 +1,6 @@
 ## RRTstar in C 
 Sampling-based path planning algorithm known as RRT*, which is an asymptotically optimal version of its probabilistically
-complete counterpart RRT (rapidly exploring random trees). C implementation of algorithm 6 in arXiv:1105.1186. 
+complete counterpart RRT (rapidly exploring random trees).  
 
 See plots below for sample output with different goal regions, where the initial location is (0.1, 0.9). 
 ![plot1](https://user-images.githubusercontent.com/44141658/51094535-ea402780-177b-11e9-8635-810cf65c85da.png)
