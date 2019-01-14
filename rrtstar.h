@@ -37,5 +37,6 @@ void extend(array_t* endpts, vertex_t* new_steer);
 void rewire(array_t* near, vertex_t* new_steer);
 void freeVertices(vertex_t* current);
 void freeArray(array_t* current);
+void writePlotFile(array_t* endpts);
 
 #endif 

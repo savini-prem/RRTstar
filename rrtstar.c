@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "rrtstar.h"
 
 #define NUM_ROBOTS 1
@@ -14,6 +15,25 @@ void printPath(vertex_t* current){
 		current = current->parent;
 		printf("[%f,%f]\n",current->loc[0],current->loc[1]);
 	}
+}
+
+void writePlotFile(array_t* endpts){
+  	FILE *f = fopen("paths.txt", "w");
+  	for(int i=0; i<endpts->len; i++){
+    	vertex_t* current = endpts->arr[i];
+    	vertex_t* start = current;
+    	for(int i=0; i<2; i++){
+    		fprintf(f, "%f ", current->loc[i]);
+
+    		while(current->parent!=NULL){
+				current = current->parent;
+    			fprintf(f, "%f ", current->loc[i]);
+    		}
+    		fprintf(f, "\n");
+    		current = start;
+  		}
+  	}
+  	fclose(f);
 }
 
 // for debugging 
@@ -56,8 +76,8 @@ void addToArray(array_t* result, vertex_t* element){
 
 // choose random location and assign to vertex
 void randLoc(vertex_t* result){ //add obstacle check to this 
-	result->loc[0] = ((float) rand()) / ((float) RAND_MAX);
-    result->loc[1] = ((float) rand()) / ((float) RAND_MAX);
+	result->loc[0] = ((float) rand() ) / ((float) RAND_MAX);
+    result->loc[1] = ((float) rand() ) / ((float) RAND_MAX);
 }
 
 // returns TRUE if vertex does not collide with ALL obstacles

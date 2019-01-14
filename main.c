@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #include "rrtstar.h"
 
 #define NUM_ROBOTS 1
@@ -14,17 +15,21 @@
       1. collisionFree means something diff?
       2. obstacles hard coded (ADD INPUT FILES WITH OBSTACLES AND GOAL REGIONS)
       3. tree searches not efficient
-      6. fix free
+      4. fix free
+      6. upload onto git
+      7. FIX OBSTACLE FREE ORDER IM SO DUMB
 */
 
 int main(int argc, char ** argv){
   // hardcoded for now
-  // obstacles: n+1 vertices (listed on counterclockwise order)
+  // obstacles: n+1 vertices (listed in counterclockwise order)
   float obst[2][5][2] = {{{0.3, 0.2}, {0.3, 0.0}, {0.7, 0.0}, {0.7, 0.2}, {0.3, 0.2}},
                          {{0.4, 1.0}, {0.4, 0.7}, {0.6, 0.7}, {0.6, 1.0}, {0.4, 1.0}}};
-  // goals: n+1 vertices (listed on counterclockwise order)
-  float goal[1][5][2] = {{{0.3, 0.5}, {0.3, 0.3}, {0.5, 0.3}, {0.3, 0.5}, {0.3, 0.3}}};
-  //float goal[1][5][2] = {{{0.1, 0.9}, {0.1, 0.7}, {0.3, 0.7}, {0.1, 0.9}, {0.1, 0.7}}};                     
+  // goals: n+1 vertices (listed in counterclockwise order)
+  float goal[1][5][2] = {{{0.1, 0.9}, {0.1, 0.7}, {0.3, 0.7}, {0.1, 0.9}, {0.1, 0.7}}};                     
+  //float goal[1][5][2] = {{{0.7, 0.9}, {0.7, 0.7}, {0.9, 0.7}, {0.7, 0.9}, {0.7, 0.7}}};
+  //float goal[1][5][2] = {{{0.7, 0.5}, {0.7, 0.3}, {0.9, 0.3}, {0.7, 0.5}, {0.7, 0.3}}};
+  //float goal[1][5][2] = {{{0.3, 0.5}, {0.3, 0.3}, {0.5, 0.3}, {0.3, 0.5}, {0.3, 0.3}}};
 
   // initialize endpoint array
   array_t* endpts = newArray();
@@ -33,20 +38,23 @@ int main(int argc, char ** argv){
   int count = 0;
 
   // create starting vertex with random location
+  //srand(time(NULL));
+  time_t t; 
+  srand((unsigned) time(&t));
   vertex_t* init = newVertex();
   while(1){
     randLoc(init); 
     if(collisionFreeMult(init,obst,NUM_OBSTACLES,OBSTACLE_SIZE)) break;
   }
+  init->loc[0] = 0.8;
+  init->loc[1] = 0.1;
   //printf("init is ");
   //printVertex(init);
 
   // increase count
   // add init to endpoint array
   count++;
-  endpts->arr = (vertex_t**)malloc(sizeof(vertex_t*)); 
-  endpts->arr[0] = init;                          
-  endpts->len++;
+  addToArray(endpts, init);
 
   // iterate NUMBER_RUNS times or until path is found 
   for(int i=0; i<NUM_RUNS; i++){
@@ -99,7 +107,7 @@ int main(int argc, char ** argv){
       //printf("endpts are: ");
       //printArray(endpts);
 
-      // rewire (future: include while loop in function??)
+      // rewire
       rewire(near,new_steer); 
 
       // break if vertex in goal region
@@ -120,9 +128,7 @@ int main(int argc, char ** argv){
 
   // print all paths that reach goal region & add to array
   printf("All Feasible Paths:\n");
-  array_t* feasible = (array_t*)malloc(sizeof(array_t));
-  feasible->arr = NULL;
-  feasible->len = 0; 
+  array_t* feasible = newArray();
   for(int i=0; i<endpts->len; i++){
     if(!collisionFreeMult(endpts->arr[i],goal,NUM_GOALS,GOAL_SIZE)){
       printf("Path %d:\n",feasible->len);
@@ -134,10 +140,13 @@ int main(int argc, char ** argv){
   printf("\n");
 
   // print least-cost path of paths that reach goal region
-  printf("Least-Cost Path:\n");
+  /*printf("Least-Cost Path:\n");
   vertex_t* result = findMinCost(feasible);
   printPath(result);
-  printf("\n");
+  printf("\n");*/
+
+  // write to plot file
+  writePlotFile(endpts);
 
   // free all allocated memory (one day run in valgrind to see if works lol)
   /*for(int i=0; i<endpts->len; i++){ 
