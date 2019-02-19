@@ -13,7 +13,7 @@ See plots below for sample output with different goal regions, where the initial
 
 ## Instructions: 
 1. Clone this repository and copy all code. 
-2. Compile using g++ compiler
+2. Compile using gcc compiler
 3. Run main.c (output: coordinates of all paths, including one feasible path)
 4. Run plot.py (output: plot of obstacles, goal region, and all paths)
 
